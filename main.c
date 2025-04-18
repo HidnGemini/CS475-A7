@@ -6,7 +6,7 @@
 int main(int argc, char *argv[])
 {
   // TODO: attempt to open scenario file and scan data into allocated structures
-  FILE * file = fopen("testfail1.txt", "r");
+  FILE * file = fopen("unsafe.txt", "r");
   int numResources;
   int numProcesses;
   int* totalResources;
@@ -45,10 +45,32 @@ int main(int argc, char *argv[])
       }
     }
 
-    if (sanityCheck(numResources, numProcesses, totalResources, allocMatrix)) {
+    if (!(sanityCheck1(numResources, numProcesses, totalResources, allocMatrix) && \
+    sanityCheck2(numResources, numProcesses, maxMatrix, allocMatrix))) {
+      return 1;
+    } 
 
+    int* available = deepCopyVec(totalResources, numResources);
+    for (int i = 0; i < numProcesses; i++) {
+      subtractFrom(available, allocMatrix[i], numResources);
+    }
+
+    int** needed = deepCopyMat(maxMatrix, numProcesses, numResources);
+    for (int i = 0; i < numProcesses; i++) {
+      subtractFrom(needed[i], allocMatrix[i], numResources);
+    }
+
+    printMat(needed, numProcesses, numResources);
+
+    bool isSafeOutcome = isSafe(available, allocMatrix, needed, numResources, numProcesses);
+
+    // TODO: free needed!
+    free(available);
+
+    if (isSafeOutcome) {
+      printf("safe!\n");
     } else {
-      printf("failed sanity check!\n");
+      printf("unsafe!\n");
     }
 
   } else {
